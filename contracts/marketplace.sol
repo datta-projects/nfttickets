@@ -19,9 +19,10 @@ contract Marketplace is Ownable {
  }
 
  struct offers{
+  uint256 offerid;
   uint256 offerprice;
   address offermadeby;
-  bool offeraccepted;
+  bool offervalid;
  }
 
  mapping(uint256 => Order)orders;
@@ -31,6 +32,7 @@ contract Marketplace is Ownable {
  event listingsold(address seller,address buyer,address tokenaddress,uint256 tokenid,uint256 price);
  event offermade(address offermadeby, address tokenaddress, uint256 tokenid, uint256 offerpriceinwei);
  event publicofferaccepted(address offerer, address tokenaddress, uint256 tokenid, uint256 priceaccepted);
+ event publicofferwithdrawn(address offerer, address tokenaddress, uint256 tokenid, uint256 pricewithdrawn);
  event RoyaltiesPaid(uint256 tokenId, uint value);
 
 
@@ -65,9 +67,10 @@ contract Marketplace is Ownable {
  function makeoffer(address tokenaddress, uint256 tokenid, uint256 offerpriceinwei)public payable {
   require(msg.value >= offerpriceinwei,"amount not right");
   publicoffers[tokenaddress][tokenid].push(offers(
+   publicoffers[tokenaddress][tokenid].length,
    msg.value,
    msg.sender,
-   false
+   true
   )
   );
   emit offermade(msg.sender, tokenaddress, tokenid, msg.value);
@@ -76,15 +79,23 @@ contract Marketplace is Ownable {
  function acceptpublicoffer(uint256 offerid,address tokenaddress,uint256 tokenid)public payable{
   require(ERC721(tokenaddress).ownerOf(tokenid) == msg.sender,"be the owner of nft to accept offers");
   offers storage offer = publicoffers[tokenaddress][tokenid][offerid];
-  require(!offer.offeraccepted,"cant accept aaccepted offer");
+  require(!offer.offervalid,"cant accept aaccepted offer");
   uint256 salevalue = offer.offerprice;
-  offer.offeraccepted = true;
+  offer.offervalid = false;
   if(_checkRoyalties(tokenaddress)){
     salevalue = _deduceRoyalties(tokenid,offer.offerprice,tokenaddress);
   }
   msg.sender.call{value: salevalue}('');
   ERC721(tokenaddress).safeTransferFrom(msg.sender, offer.offermadeby, tokenid);
   emit publicofferaccepted(offer.offermadeby, tokenaddress, tokenid, offer.offerprice);
+ }
+
+ function withdrawoffer(uint256 offerid,address tokenaddress, uint256 tokenid)public{
+  offers storage offer = publicoffers[tokenaddress][tokenid][offerid];
+  require(offer.offermadeby == msg.sender,"not the guy who made the offer :(");
+  offer.offervalid = false;
+  offer.offermadeby.call{value: offer.offerprice}('');
+  emit publicofferwithdrawn(msg.sender, tokenaddress, tokenid, offer.offerprice);
  }
 
  function _checkRoyalties(address _contract) internal returns (bool) {
