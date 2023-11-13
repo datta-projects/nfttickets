@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/token/common/ERC2981.sol";
 
-contract NFTticket is ERC721, Ownable,ERC2981 {
+contract nft is ERC721, Ownable,ERC2981 {
     uint256 private _nextTokenId;
 
     string public uriPrefix = "";

@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/common/ERC2981.sol";
 
-contract Marketplace is Ownable {
+contract marketplace is Ownable {
 
  uint256 public orderCount;
  bytes4 private constant _INTERFACE_ID_ERC2981 = 0x2a55205a;
